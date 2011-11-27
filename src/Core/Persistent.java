@@ -4,22 +4,18 @@ public class Persistent {
 	
     public String GetStorageGlobalName()
     {
-    	String name = this.getClass().toString();
+    	String name = this.getClass().getSimpleName();
     	name =  name.concat("D");
     	return name;
     }
  
     public String GetIndexGlobalName()
     {
-    	return this.getClass().toString().concat("I");
+    	return this.getClass().getSimpleName().concat("I");
     }
     
-    public static long GetNextId()
-    {
-        return 1;
-    }
     
-    public long Id;
+    public long Id = 0;
     
     public String Name ;
    
@@ -28,6 +24,16 @@ public class Persistent {
     public String toString()
     {
         return "Name:"+this.Name+ ", Id:"+this.Id+", CreatedOn:"+CreatedOn;
+    }
+    
+    public void Save()
+    {
+    	try {
+			DataWorker.Instance().SaveObject(this);
+		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
   
 }
