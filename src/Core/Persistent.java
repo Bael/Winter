@@ -35,5 +35,18 @@ public class Persistent {
 			e.printStackTrace();
 		}
     }
+    
+    
+    public Persistent LoadData()
+    {
+    	Persistent p = null;
+    	try {
+			p = DataWorker.Instance().LoadObjectById(this.Id, this);
+		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	return p;
+    }
   
 }

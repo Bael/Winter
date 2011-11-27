@@ -19,6 +19,7 @@ public class DataWorker {
     
     private static DataWorker dataWorker;
     private LogWriter log;
+    private Connection connection;
     public static DataWorker Instance()
     {
         if (dataWorker == null)
@@ -34,6 +35,9 @@ public class DataWorker {
     	DataWorker worker = new DataWorker();
     	worker.log = new LogWriter();
     	worker.log.FileName = "c:\\temp\\javaLog.txt";
+    	
+    	worker.connection = ConnectionManager.Instance().getConnection();
+         
     	return worker;
     }
     public void UpdateIndicesOnCreate(Persistent obj)
@@ -41,7 +45,7 @@ public class DataWorker {
     	
     }
     
-    public void UpdateIndicesOnUpdate(Persistent obj)
+    public void UpdateIndicesOnUpdate(Persistent oldObj, Persistent obj)
     {
     	
     }
@@ -148,13 +152,11 @@ public class DataWorker {
     
     public Persistent SaveObject(Persistent obj) throws IllegalAccessException
     {
-        
         NodeReference node = null;
         try
         {
-            Connection conn = ConnectionManager.Instance().getConnection();
             String globalName = obj.GetStorageGlobalName();
-            node = conn.createNodeReference(globalName);
+            node = connection.createNodeReference(globalName);
         }
         catch (Exception ex)
         {
@@ -162,7 +164,7 @@ public class DataWorker {
             throw ex;
         }
         
-        
+        Persistent oldObj = null;
         if (obj.Id == 0)
         {
         	node.increment(1);
@@ -171,8 +173,10 @@ public class DataWorker {
         }
         else
         {
+        	oldObj = LoadObjectById(obj.Id, obj);
         	//node.setSubscriptCount(0);
-            node.appendSubscript(obj.Id);
+        	//znode .setSubscriptCount((int)obj.Id);
+            //node.appendSubscript(obj.Id);
         }
         
         Class info = obj.getClass();
@@ -184,8 +188,14 @@ public class DataWorker {
             field = fields[i];
             SetNodeSubscriptField(field, obj, node);
         }
-        
-        UpdateIndicesOnCreate(obj);
+        if (oldObj == null)
+        {
+        	UpdateIndicesOnCreate(obj);
+        }
+        else
+        {
+        	UpdateIndicesOnUpdate(oldObj, obj);
+        }
         return obj;
     }
     
@@ -197,7 +207,7 @@ public class DataWorker {
     
     public Persistent LoadObjectById(Long id, Persistent obj) throws IllegalAccessException
     {
-        NodeReference node = ConnectionManager.Instance().getConnection().createNodeReference(obj.GetStorageGlobalName());
+        NodeReference node = connection.createNodeReference(obj.GetStorageGlobalName());
         
         InitSchema(obj);
         
@@ -205,8 +215,8 @@ public class DataWorker {
         node.appendSubscript(id);
         Field field;
         String subscript = "";
-         Object nodeValue = null;
-         do {
+        Object nodeValue = null;
+        do {
             subscript = node.nextSubscript(subscript);
             if (subscript.length() > 0) 
             {
@@ -232,7 +242,7 @@ public class DataWorker {
                     }
                }
             }
-         } while (subscript.length() > 0);
+         }while (subscript.length() > 0);
          
        
         return obj;
@@ -250,9 +260,6 @@ public class DataWorker {
         SchemaClassName = classInfo.getName();
         Field[] fields = classInfo.getFields();
 
-        
-        ///System.out.println("Step7");
-        ///System.out.println("Access all the fields");
         for (int i = 0; i < fields.length; i++)
         { 
             fieldsMap.put(fields[i].getName(), fields[i]);
