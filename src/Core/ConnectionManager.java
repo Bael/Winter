@@ -1,9 +1,7 @@
-package Core;
+package core;
 	import java.io.*;
 	import com.intersys.globals.*;
 	import java.io.PrintWriter;
-	import java.util.logging.Level;
-	import java.util.logging.Logger;
 	public class ConnectionManager {
 	
 	  	private static ConnectionManager manager;
@@ -46,7 +44,7 @@ package Core;
 	            try
 	            {
 	                System.out.println("Step1");
-	                _connection =  ConnectionContext.getConnection(); // ConnectionContext.getConnection();
+	                _connection =  ConnectionContext.getConnection(); 
 	                System.out.println("Step2");
 	                
 	                if (!_connection.isConnected())
