@@ -40,9 +40,65 @@ public class DataWorker {
          
     	return worker;
     }
+    
     public void UpdateIndicesOnCreate(Persistent obj)
     {
+    }
+    
+    private void UpdateIndexForField(Persistent obj, Field field) throws IllegalAccessException
+    {
+    	UpdateIndexForField(obj, field, null);
+    }
+    
+    private void UpdateIndexForField(Persistent obj, Field field, Persistent oldObj) 
+    		throws IllegalAccessException
+    {
+    	if (field.getName() == "Id")
+    		return;
     	
+    	NodeReference node = null;
+        try
+        {
+            String globalName = obj.GetIndexGlobalName();
+            node = connection.createNodeReference(globalName);
+        }
+        catch (Exception ex)
+        {
+            log.WriteToFile(ex.toString(), true);
+            throw ex;
+        }
+        
+        if (oldObj != null)
+        {
+        	Object oldVal = field.get(oldObj);
+        	if (oldVal != null)
+        	{
+        		String val = convertValueForIndexing(oldVal);
+	        	if (node.exists(val, oldObj.Id))
+	        		node.kill(val, oldObj.Id);
+        	}
+	    }
+        
+        if (obj != null)
+        {
+        	Object newVal = field.get(obj);
+        	if (newVal != null)
+        	{
+        		String val = convertValueForIndexing(newVal);
+        		if (!node.exists(val, obj.Id))
+        			node.set("", val, obj.Id);
+        	}
+        }
+    }
+    
+    private String convertValueForIndexing(Object value)
+    {
+    	if (value instanceof String)
+    		return " " + value.toString().toUpperCase();
+    	else
+    	{
+    		return value.toString();
+    	}
     }
     
     public void UpdateIndicesOnUpdate(Persistent oldObj, Persistent obj)
@@ -54,64 +110,7 @@ public class DataWorker {
     {
     	
     }
-    /*
- 
-    public ArrayList GetAllByInstance(Persistent _obj)
-    {
-        ArrayList list = new ArrayList();
-        NodeReference node = ConnectionManager.Instance().getConnection().createNodeReference(_obj.GetStorageGlobalName());
-        node.appendSubscript("");
-        String subscr = "";
-        subscr = node.nextSubscript();   
-         while (!subscr.equals("")) 
-         {
-            long id = new Long(subscr); 
-                     
-            Persistent obj = new Persistent();
-            try {
-                obj = _obj.getClass().newInstance();
-            } catch (InstantiationException ex) {
-                Logger.getLogger(DataWorker.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (IllegalAccessException ex) {
-                Logger.getLogger(DataWorker.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            try {
-                System.out.println(id+ " . " + _obj.GetStorageGlobalName());
-                
-                obj = LoadObjectById(id, obj);
-            } catch (IllegalAccessException ex) {
-                Logger.getLogger(DataWorker.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            list.add(obj);
-            subscr = node.nextSubscript();
-            node.setSubscript(node.getSubscriptCount(), subscr);
-            
-          }
-
-   
-        return list;
         
-    }
-    
-    public void Iterate(Persistent obj)
-    {
-        String globalName = obj.GetStorageGlobalName(); //obj.STORAGEGLOBALNAME;
-        NodeReference node = ConnectionManager.Instance().getConnection().createNodeReference(globalName);
-        node.appendSubscript("");
-        String subscr = "";
-        subscr = node.nextSubscript();   
-        while (!subscr.equals("")) 
-        {
-            System.out.print("\"" + subscr + "\"=" +  " ");
-            subscr = node.nextSubscript();
-            node.setSubscript(node.getSubscriptCount(), subscr);
-            
-        };
-
-   
-    }
-    */
-    
     public void SetNodeSubscriptField(Field field, Persistent obj, NodeReference node)
     {
     	Long Id = obj.Id;
@@ -122,24 +121,18 @@ public class DataWorker {
 			 {
 			     node.set(fieldValue.toString(), Id, fieldName);
 			 }
-			 else
-			 {
-			     if (fieldValue instanceof java.lang.Long)
-			     {
-			         long longValue = field.getLong(obj);
-			         node.set(longValue, Id, fieldName);
-			     }
-			     else  
-			     {
-			         if (fieldValue instanceof java.util.Date)
-			         {
-			             Date dateValue = (Date)  fieldValue;
-			             String strValue = dateValue.toGMTString();
-			             node.set(strValue, obj.Id, fieldName);
-			         }
-			     }
-			 }
-		} 
+			 else if (fieldValue instanceof java.lang.Long)
+		     {
+		         long longValue = field.getLong(obj);
+		         node.set(longValue, Id, fieldName);
+		     }
+		     else if (fieldValue instanceof java.util.Date)
+		     {
+	             Date dateValue = (Date)  fieldValue;
+	             String strValue = dateValue.toGMTString();
+	             node.set(strValue, obj.Id, fieldName);
+	         }
+	    } 
     	catch (IllegalArgumentException | IllegalAccessException e) 
     	{
 			// TODO Auto-generated catch block
@@ -187,14 +180,7 @@ public class DataWorker {
         { 
             field = fields[i];
             SetNodeSubscriptField(field, obj, node);
-        }
-        if (oldObj == null)
-        {
-        	UpdateIndicesOnCreate(obj);
-        }
-        else
-        {
-        	UpdateIndicesOnUpdate(oldObj, obj);
+            UpdateIndexForField(obj, field, oldObj);
         }
         return obj;
     }
