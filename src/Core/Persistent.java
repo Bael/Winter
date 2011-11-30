@@ -37,6 +37,13 @@ public class Persistent {
     }
     
     
+    public Persistent OpenId(Long id)
+    {
+    	this.Id = id;
+    	return this.LoadData();
+    	
+    }
+    
     public Persistent LoadData()
     {
     	Persistent p = null;

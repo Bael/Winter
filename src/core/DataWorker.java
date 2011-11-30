@@ -179,7 +179,8 @@ public class DataWorker {
         for (int i = 0; i < fields.length; i++)
         { 
             field = fields[i];
-            SetNodeSubscriptField(field, obj, node);
+            FieldSetter.SetFieldValue(obj, field, node);
+            //SetNodeSubscriptField(field, obj, node);
             UpdateIndexForField(obj, field, oldObj);
         }
         return obj;
@@ -208,6 +209,9 @@ public class DataWorker {
             {
                field = fieldsMap.get(subscript);
                nodeValue = node.getObject(subscript);
+               
+               FieldGetter.GetFieldValue(obj, field, nodeValue, subscript, node);
+               /*
                if (nodeValue instanceof java.lang.Long)
                {
                    Long nodeLongValue = node.getLong(subscript);
@@ -226,7 +230,7 @@ public class DataWorker {
                    
                         field.set(obj, nodeValue);
                     }
-               }
+               }*/
             }
          }while (subscript.length() > 0);
          
