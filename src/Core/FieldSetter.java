@@ -28,10 +28,8 @@ public class FieldSetter {
 			
 			Long Id = obj.Id;
 			Object fieldValue = field.get(obj);
-			System.out.println("setted " + fieldValue.toString() + " " + fieldName);
 			 if (fieldValue instanceof java.lang.String)
 			 {
-				 System.out.println("node set " + fieldValue.toString() + " " + Id + " " + fieldName);
 			     node.set(fieldValue.toString(), Id, fieldName);
 			 }
 			 else if (fieldValue instanceof java.lang.Long)

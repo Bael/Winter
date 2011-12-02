@@ -31,6 +31,16 @@ public class DataWorker {
         return dataWorker;
     }
     
+    public static String GetIndexGlobalName(Class persistentClass)
+    {
+    	return persistentClass.getSimpleName().concat("I");
+    }
+    
+    public static NodeReference GetNodeReference(String nodeName)
+    {
+    	return Instance().connection.createNodeReference(nodeName);
+    }
+    
     
     public static DataWorker Init()
     {
@@ -82,7 +92,7 @@ public class DataWorker {
         	Object oldVal = field.get(oldObj);
         	if (oldVal != null)
         	{
-        		String val = convertValueForIndexing(oldVal);
+        		String val = ConvertValueForIndexing(oldVal);
 	        	if (node.exists(indexName, val, oldObj.Id))
 	        		node.kill(indexName, val, oldObj.Id);
         	}
@@ -93,14 +103,14 @@ public class DataWorker {
         	Object newVal = field.get(obj);
         	if (newVal != null)
         	{
-        		String val = convertValueForIndexing(newVal);
+        		String val = ConvertValueForIndexing(newVal);
         		if (!node.exists(indexName, val, obj.Id))
         			node.set("", indexName, val, obj.Id);
         	}
         }
     }
     
-    private String convertValueForIndexing(Object value)
+    public static String ConvertValueForIndexing(Object value)
     {
     	if (value instanceof String)
     		return " " + value.toString().toUpperCase();
@@ -119,9 +129,19 @@ public class DataWorker {
     	
     }
     
-    public void UpdateIndicesOnDelete(Persistent obj)
+    public void UpdateIndicesOnDelete(Persistent obj) throws IllegalArgumentException, IllegalAccessException
     {
-    	
+    	String globalName = obj.GetIndexGlobalName();
+        NodeReference node = connection.createNodeReference(globalName);
+        
+    	Field[] fields = obj.getClass().getFields();
+    	for (int i =0; i< fields.length; i++)
+    	{
+    		Field field = fields[i];
+    		Index annotation = field.getAnnotation(Index.class);
+    		if (annotation != null)
+    			node.kill(annotation.IndexName(), ConvertValueForIndexing(field.get(obj).toString()), obj.Id);
+    	}
     }
         
     public void SetNodeSubscriptField(Field field, Persistent obj, NodeReference node)
@@ -188,12 +208,10 @@ public class DataWorker {
         Class info = obj.getClass();
         Field[] fields = info.getFields();
         Field field;
-        System.out.println("all fields " + fields.toString());
-        System.out.println("save");
+
         for (int i = 0; i < fields.length; i++)
         { 
-        	System.out.println("print line " + fields[i].getName());
-            field = fields[i];
+        	field = fields[i];
             FieldSetter.SetFieldValue(obj, field, node);
             //SetNodeSubscriptField(field, obj, node);
             UpdateIndexForField(obj, field, oldObj);
@@ -203,8 +221,16 @@ public class DataWorker {
     
     public void DeleteObjectById(Long id, String globalName)
     {
-        NodeReference node = ConnectionManager.Instance().getConnection().createNodeReference(globalName);
+    	NodeReference node = ConnectionManager.Instance().getConnection().createNodeReference(globalName);
         node.kill(id);
+    }
+    
+    public void DeleteObject(Persistent obj) throws IllegalArgumentException, IllegalAccessException
+    {
+    	String globalName = obj.GetStorageGlobalName();
+    	NodeReference node = ConnectionManager.Instance().getConnection().createNodeReference(globalName);
+        node.kill(obj.Id);
+        UpdateIndicesOnDelete(obj);
     }
     
     public Persistent LoadObjectById(Long id, Persistent obj) throws IllegalAccessException

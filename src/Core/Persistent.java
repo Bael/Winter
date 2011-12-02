@@ -11,7 +11,7 @@ public class Persistent {
  
     public String GetIndexGlobalName()
     {
-    	return this.getClass().getSimpleName().concat("I");
+    	return DataWorker.GetIndexGlobalName(this.getClass());
     }
     
     
