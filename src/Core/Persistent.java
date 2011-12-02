@@ -1,4 +1,4 @@
-package core;
+package Core;
 import java.util.Date;
 public class Persistent {
 	
@@ -17,9 +17,9 @@ public class Persistent {
     
     public long Id = 0;
     
-    public String Name ;
+    public String Name = "";
    
-    public Date CreatedOn;
+    public Date CreatedOn = new Date();
     
     public String toString()
     {

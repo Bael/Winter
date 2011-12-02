@@ -1,7 +1,9 @@
-package core;
-import core.ConnectionManager;
-import core.Persistent;
+package Core;
+import Core.ConnectionManager;
+import Core.Persistent;
 import com.intersys.globals.Connection;
+
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field; 
 import java.lang.reflect.Method; 
 import com.intersys.globals.NodeReference;
@@ -56,6 +58,13 @@ public class DataWorker {
     	if (field.getName() == "Id")
     		return;
     	
+    	Index indexAnnotation = field.getAnnotation(Index.class);
+    	
+    	if (indexAnnotation == null)
+    		return;
+    	
+    	String indexName = indexAnnotation.IndexName();
+    	
     	NodeReference node = null;
         try
         {
@@ -74,8 +83,8 @@ public class DataWorker {
         	if (oldVal != null)
         	{
         		String val = convertValueForIndexing(oldVal);
-	        	if (node.exists(val, oldObj.Id))
-	        		node.kill(val, oldObj.Id);
+	        	if (node.exists(indexName, val, oldObj.Id))
+	        		node.kill(indexName, val, oldObj.Id);
         	}
 	    }
         
@@ -85,8 +94,8 @@ public class DataWorker {
         	if (newVal != null)
         	{
         		String val = convertValueForIndexing(newVal);
-        		if (!node.exists(val, obj.Id))
-        			node.set("", val, obj.Id);
+        		if (!node.exists(indexName, val, obj.Id))
+        			node.set("", indexName, val, obj.Id);
         	}
         }
     }
@@ -95,6 +104,10 @@ public class DataWorker {
     {
     	if (value instanceof String)
     		return " " + value.toString().toUpperCase();
+    	else if (value instanceof Date)
+    	{
+    		return value.toString();
+    	}
     	else
     	{
     		return value.toString();
@@ -175,9 +188,11 @@ public class DataWorker {
         Class info = obj.getClass();
         Field[] fields = info.getFields();
         Field field;
-        
+        System.out.println("all fields " + fields.toString());
+        System.out.println("save");
         for (int i = 0; i < fields.length; i++)
         { 
+        	System.out.println("print line " + fields[i].getName());
             field = fields[i];
             FieldSetter.SetFieldValue(obj, field, node);
             //SetNodeSubscriptField(field, obj, node);

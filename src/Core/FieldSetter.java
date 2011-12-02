@@ -1,4 +1,4 @@
-package core;
+package Core;
 
 import java.lang.reflect.Field;
 import java.util.Date;
@@ -28,28 +28,24 @@ public class FieldSetter {
 			
 			Long Id = obj.Id;
 			Object fieldValue = field.get(obj);
+			System.out.println("setted " + fieldValue.toString() + " " + fieldName);
 			 if (fieldValue instanceof java.lang.String)
 			 {
+				 System.out.println("node set " + fieldValue.toString() + " " + Id + " " + fieldName);
 			     node.set(fieldValue.toString(), Id, fieldName);
 			 }
-			 else
-			 {
-			     if (fieldValue instanceof java.lang.Long)
-			     {
-			         long longValue = field.getLong(obj);
-			         node.set(longValue, Id, fieldName);
-			     }
-			     else  
-			     {
-			         if (fieldValue instanceof java.util.Date)
-			         {
-			             Date dateValue = (Date)  fieldValue;
-			             String strValue = dateValue.toGMTString();
-			             node.set(strValue, obj.Id, fieldName);
-			         }
-			     }
-			 }
-    	}
+			 else if (fieldValue instanceof java.lang.Long)
+		    {
+		         long longValue = field.getLong(obj);
+		         node.set(longValue, Id, fieldName);
+		     }
+		     else if (fieldValue instanceof java.util.Date)
+	         {
+	             Date dateValue = (Date) fieldValue;
+	             String strValue = dateValue.toGMTString();
+	             node.set(strValue, obj.Id, fieldName);
+	         }
+		}
 		catch (IllegalArgumentException | IllegalAccessException e) 
     	{
 			e.printStackTrace();
